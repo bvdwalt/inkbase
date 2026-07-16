@@ -10,13 +10,23 @@ import (
 	"time"
 
 	"github.com/bvdwalt/inkbase/internal/config"
+	"github.com/bvdwalt/inkbase/internal/db"
 	"github.com/bvdwalt/inkbase/internal/server"
+	"github.com/bvdwalt/inkbase/internal/store"
 )
 
 func run(ctx context.Context, cfg *config.Config) error {
+	sqlDB, err := db.Connect(cfg.DBPath)
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
+
+	st := store.New(sqlDB)
+
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           server.New(),
+		Handler:           server.New(st, cfg.AutosaveIntervalSeconds),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 	}

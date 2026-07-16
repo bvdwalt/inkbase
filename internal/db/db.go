@@ -1,5 +1,3 @@
-// Package db is an opt-in SQLite data-layer scaffold. Delete this package
-// (and remove its wiring from main.go) if the app doesn't need persistence.
 package db
 
 import (
@@ -21,6 +19,10 @@ func Connect(path string) (*sql.DB, error) {
 
 	if _, err := db.Exec(`PRAGMA journal_mode = WAL;`); err != nil {
 		return nil, fmt.Errorf("enable WAL: %w", err)
+	}
+
+	if _, err := db.Exec(`PRAGMA foreign_keys = ON;`); err != nil {
+		return nil, fmt.Errorf("enable foreign keys: %w", err)
 	}
 
 	if err := migrate(db); err != nil {

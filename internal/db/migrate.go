@@ -11,9 +11,7 @@ import (
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
-// migrate applies any migrations/*.sql files not yet recorded in
-// schema_migrations, in filename order. Migration files are applied whole,
-// in a single transaction each — keep them small and additive.
+// migrate applies migrations/*.sql not yet recorded in schema_migrations, in filename order, each in its own transaction.
 func migrate(db *sql.DB) error {
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS schema_migrations (

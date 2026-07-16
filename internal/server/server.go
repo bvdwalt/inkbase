@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bvdwalt/inkbase/internal/store"
 	"github.com/bvdwalt/inkbase/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func New() http.Handler {
+func New(st *store.Store, autosaveIntervalSeconds int) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -19,9 +20,17 @@ func New() http.Handler {
 
 	r.Get("/health", healthHandler)
 
-	// r.Route("/api", func(r chi.Router) {
-	// 	r.Get("/example", exampleHandler)
-	// })
+	r.Route("/api", func(r chi.Router) {
+		r.Get("/config", configHandler(autosaveIntervalSeconds))
+		r.Get("/pages", listPagesHandler(st))
+		r.Post("/pages", createPageHandler(st))
+		r.Get("/pages/{id}", getPageHandler(st))
+		r.Put("/pages/{id}", updatePageHandler(st))
+		r.Delete("/pages/{id}", deletePageHandler(st))
+		r.Get("/pages/{id}/revisions", listRevisionsHandler(st))
+		r.Post("/pages/{id}/revert/{revisionID}", revertHandler(st))
+		r.Get("/search", searchHandler(st))
+	})
 
 	r.Handle("/*", spaHandler())
 
