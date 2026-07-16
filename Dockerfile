@@ -11,13 +11,13 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=web-builder /app/web/dist ./web/dist
-RUN CGO_ENABLED=0 GOOS=linux go build -o /APP_NAME ./cmd/APP_NAME
+RUN CGO_ENABLED=0 GOOS=linux go build -o /inkbase ./cmd/inkbase
 
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates
 
-COPY --from=go-builder /APP_NAME /APP_NAME
+COPY --from=go-builder /inkbase /inkbase
 
 VOLUME ["/data"]
 EXPOSE 8080
-ENTRYPOINT ["/APP_NAME"]
+ENTRYPOINT ["/inkbase"]

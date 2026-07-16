@@ -1,4 +1,4 @@
-module MODULE_PATH
+module github.com/bvdwalt/inkbase
 
 go 1.25.0
 

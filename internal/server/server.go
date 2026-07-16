@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"MODULE_PATH/web"
+	"github.com/bvdwalt/inkbase/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )

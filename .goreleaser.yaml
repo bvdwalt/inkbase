@@ -1,14 +1,14 @@
 version: 2
 
-project_name: APP_NAME
+project_name: inkbase
 
 before:
   hooks:
     - go mod download
 
 builds:
-  - main: ./cmd/APP_NAME
-    binary: APP_NAME
+  - main: ./cmd/inkbase
+    binary: inkbase
     env:
       - CGO_ENABLED=0
     goos:
@@ -30,18 +30,18 @@ archives:
 
 homebrew_casks:
   - repository:
-      owner: GITHUB_OWNER
+      owner: bvdwalt
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    homepage: "https://github.com/GITHUB_OWNER/APP_NAME"
-    description: "APP_DESCRIPTION"
+    homepage: "https://github.com/bvdwalt/inkbase"
+    description: "Self-hosted markdown wiki for homelab notes"
     license: "MIT"
 
 # Docker — remove this section if not publishing a Docker image
 dockers_v2:
   - id: dockerhub
     images:
-      - "{{ .Env.DOCKERHUB_USERNAME }}/APP_NAME"
+      - "{{ .Env.DOCKERHUB_USERNAME }}/inkbase"
     tags:
       - "{{ .Version }}"
       - latest
@@ -52,7 +52,7 @@ dockers_v2:
 
   - id: ghcr
     images:
-      - "ghcr.io/GITHUB_OWNER/APP_NAME"
+      - "ghcr.io/bvdwalt/inkbase"
     tags:
       - "{{ .Version }}"
       - latest
@@ -66,8 +66,8 @@ checksum:
 
 release:
   github:
-    owner: GITHUB_OWNER
-    name: APP_NAME
+    owner: bvdwalt
+    name: inkbase
 
 changelog:
   sort: asc

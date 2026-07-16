@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"MODULE_PATH/internal/config"
-	"MODULE_PATH/internal/server"
+	"github.com/bvdwalt/inkbase/internal/config"
+	"github.com/bvdwalt/inkbase/internal/server"
 )
 
 func run(ctx context.Context, cfg *config.Config) error {
