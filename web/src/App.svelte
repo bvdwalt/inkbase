@@ -94,7 +94,13 @@
   }
 
   // Excludes this page and its own descendants (backend also enforces this).
-  function moveTargets(pageId: string): PageSummary[] {
+  interface MoveTarget {
+    page: PageSummary;
+    depth: number;
+  }
+
+  // Tree order + depth (backend returns a flat alphabetical list).
+  function moveTargets(pageId: string): MoveTarget[] {
     const excluded = new Set<string>([pageId]);
     let grew = true;
     while (grew) {
@@ -106,7 +112,23 @@
         }
       }
     }
-    return pages.filter((p) => !excluded.has(p.id));
+    const eligible = pages.filter((p) => !excluded.has(p.id));
+
+    const result: MoveTarget[] = [];
+    function walk(parentId: string | null, depth: number) {
+      for (const p of eligible.filter((p) => p.parentId === parentId)) {
+        result.push({ page: p, depth });
+        walk(p.id, depth + 1);
+      }
+    }
+    walk(null, 0);
+    return result;
+  }
+
+  function moveTargetLabel(target: MoveTarget): string {
+    const indent = "  ".repeat(target.depth);
+    const marker = target.depth > 0 ? "↳ " : "";
+    return `${indent}${marker}${target.page.title}`;
   }
 
   async function save(): Promise<boolean> {
@@ -207,6 +229,18 @@
     selectPage(id);
   }
 
+  // Ancestor slugs joined into a path, e.g. "homelab/altair/networking".
+  function pagePath(pageId: string): string {
+    const chain: string[] = [];
+    let p: PageSummary | undefined = pages.find((p) => p.id === pageId);
+    while (p) {
+      chain.unshift(p.slug);
+      const parentId: string | null = p.parentId;
+      p = parentId ? pages.find((p) => p.id === parentId) : undefined;
+    }
+    return chain.join("/");
+  }
+
   loadPages();
   loadConfig();
 </script>
@@ -244,27 +278,30 @@
   <main>
     {#if current}
       <div class="toolbar">
-        <input
-          class="title-input"
-          type="text"
-          bind:value={editTitle}
-          placeholder="Page title"
-        />
+        <div class="title-block">
+          <input
+            class="title-input"
+            type="text"
+            bind:value={editTitle}
+            placeholder="Page title"
+          />
+          <span class="page-path">~/{pagePath(current.id)}</span>
+        </div>
         <select
           class="parent-select"
           value={editParentId ?? ""}
           onchange={onParentSelectChange}
         >
           <option value="">— Top level —</option>
-          {#each moveTargets(current.id) as p (p.id)}
-            <option value={p.id}>{p.title}</option>
+          {#each moveTargets(current.id) as target (target.page.id)}
+            <option value={target.page.id}>{moveTargetLabel(target)}</option>
           {/each}
         </select>
         <label class="autosave-toggle">
           <input type="checkbox" bind:checked={autosaveEnabled} />
           Autosave
         </label>
-        <button onclick={save} disabled={!dirty || saving}>
+        <button class="btn-primary" onclick={save} disabled={!dirty || saving}>
           {saving ? "Saving..." : "Save"}
         </button>
         <button onclick={toggleRevisions}>History</button>
@@ -285,7 +322,7 @@
               {#each revisions as rev, i (rev.id)}
                 <li class="revision-row">
                   <div class="revision-header">
-                    <span>{new Date(rev.createdAt).toLocaleString()} — {rev.title}</span>
+                    <span><span class="revision-time">{new Date(rev.createdAt).toLocaleString()}</span> — {rev.title}</span>
                     <span class="revision-actions">
                       <button onclick={() => toggleDiff(rev.id)}>
                         {expandedDiffId === rev.id ? "Hide diff" : "Diff"}
@@ -321,7 +358,7 @@
   .sidebar {
     width: 280px;
     flex-shrink: 0;
-    border-right: 1px solid #2a2a2a;
+    border-right: 1px solid var(--border);
     padding: 1rem;
     overflow-y: auto;
     display: flex;
@@ -336,10 +373,11 @@
   .search input {
     width: 100%;
     padding: 0.4rem 0.6rem;
-    background: #1a1a1a;
-    border: 1px solid #333;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 4px;
     color: inherit;
+    font-family: inherit;
   }
 
   .search-results {
@@ -348,8 +386,8 @@
     left: 0;
     right: 0;
     z-index: 10;
-    background: #1a1a1a;
-    border: 1px solid #333;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
     border-radius: 4px;
     margin-top: 0.25rem;
     max-height: 300px;
@@ -371,27 +409,33 @@
   }
 
   .search-results button:hover {
-    background: #2a2a2a;
+    background: var(--surface);
   }
 
   .search-results .snippet {
     display: block;
     font-size: 0.8rem;
-    color: #999;
+    color: var(--muted);
   }
 
   .search-results :global(mark) {
-    background: #5a4a1a;
-    color: inherit;
+    background: var(--accent-tint);
+    color: var(--accent);
   }
 
   .new-page {
-    background: #2d4a63;
-    border: none;
-    color: #fff;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
     padding: 0.5rem;
     border-radius: 4px;
     cursor: pointer;
+    font-weight: 500;
+    transition: background-color 120ms ease;
+  }
+
+  .new-page:hover {
+    background: var(--accent-tint);
   }
 
   main {
@@ -407,14 +451,22 @@
     margin-bottom: 1rem;
     position: sticky;
     top: 0;
-    background: #121212;
+    background: var(--bg);
     padding-bottom: 0.75rem;
     z-index: 1;
   }
 
-  .title-input {
+  .title-block {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .title-input {
     font-size: 1.4rem;
+    font-family: inherit;
     background: none;
     border: none;
     border-bottom: 1px solid transparent;
@@ -424,12 +476,21 @@
 
   .title-input:focus {
     outline: none;
-    border-bottom-color: #2d4a63;
+    border-bottom-color: var(--accent);
+  }
+
+  .page-path {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .parent-select {
-    background: #2a2a2a;
-    border: 1px solid #333;
+    background: var(--surface);
+    border: 1px solid var(--border);
     color: inherit;
     padding: 0.4rem 0.6rem;
     border-radius: 4px;
@@ -441,18 +502,26 @@
     align-items: center;
     gap: 0.35rem;
     font-size: 0.85rem;
-    color: #aaa;
+    color: var(--muted);
     white-space: nowrap;
     cursor: pointer;
   }
 
   button {
-    background: #2a2a2a;
-    border: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
     color: inherit;
     padding: 0.4rem 0.8rem;
     border-radius: 4px;
     cursor: pointer;
+    font-family: inherit;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+  }
+
+  button:hover:not(:disabled) {
+    border-color: var(--accent);
   }
 
   button:disabled {
@@ -460,18 +529,35 @@
     cursor: default;
   }
 
+  button.btn-primary:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+    font-weight: 500;
+  }
+
+  button.btn-primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
   button.danger {
-    background: #5a2a2a;
+    background: var(--danger-tint);
+    border-color: transparent;
+    color: var(--danger);
+  }
+
+  button.danger:hover:not(:disabled) {
+    border-color: var(--danger);
   }
 
   .empty-state {
-    color: #888;
+    color: var(--muted);
     margin-top: 3rem;
     text-align: center;
   }
 
   .error {
-    color: #cf6679;
+    color: var(--danger);
   }
 
   .revisions ul {
@@ -481,13 +567,19 @@
 
   .revision-row {
     padding: 0.5rem 0;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--border);
   }
 
   .revision-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .revision-time {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--muted);
   }
 
   .revision-actions {

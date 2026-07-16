@@ -23,29 +23,31 @@
 
 <style>
   .diff {
-    background: #161616;
-    border: 1px solid #2a2a2a;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.75rem;
     margin: 0.5rem 0;
     white-space: pre-wrap;
-    font-size: 0.85rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
     line-height: 1.5;
   }
 
   .added {
-    background: #1e3a24;
+    background: rgba(143, 209, 158, 0.14);
     color: #8fd19e;
   }
 
   .removed {
-    background: #3a1e1e;
+    background: rgba(209, 158, 143, 0.14);
     color: #d19e8f;
     text-decoration: line-through;
   }
 
   .no-change {
-    color: #888;
+    color: var(--muted);
     margin: 0;
+    font-family: var(--font-sans);
   }
 </style>

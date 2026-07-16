@@ -68,6 +68,7 @@
   .editor :global(.ProseMirror h2),
   .editor :global(.ProseMirror h3) {
     margin: 1em 0 0.5em;
+    font-weight: 600;
   }
 
   .editor :global(.ProseMirror ul),
@@ -77,22 +78,30 @@
   }
 
   .editor :global(.ProseMirror pre) {
-    background: #1a1a1a;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.75em 1em;
     overflow-x: auto;
+    font-family: var(--font-mono);
   }
 
   .editor :global(.ProseMirror code) {
-    background: #1a1a1a;
+    background: var(--surface);
     border-radius: 3px;
     padding: 0.1em 0.3em;
+    font-family: var(--font-mono);
+  }
+
+  .editor :global(.ProseMirror pre code) {
+    background: none;
+    padding: 0;
   }
 
   .editor :global(.ProseMirror blockquote) {
-    border-left: 3px solid #444;
+    border-left: 3px solid var(--accent);
     margin: 0 0 0.75em;
     padding-left: 1em;
-    color: #aaa;
+    color: var(--muted);
   }
 </style>

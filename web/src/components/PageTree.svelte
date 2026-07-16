@@ -12,9 +12,10 @@
   let { pages, parentId, selectedId, onSelect }: Props = $props();
 
   let children = $derived(pages.filter((p) => p.parentId === parentId));
+  let isNested = $derived(parentId !== null);
 </script>
 
-<ul class="tree">
+<ul class="tree" class:nested={isNested}>
   {#each children as page (page.id)}
     <li>
       <button
@@ -35,11 +36,13 @@
   .tree {
     list-style: none;
     margin: 0;
-    padding-left: 0.9rem;
+    padding-left: 0;
   }
 
-  .tree:first-child {
-    padding-left: 0;
+  .tree.nested {
+    padding-left: 0.9rem;
+    border-left: 1px solid var(--border);
+    margin-left: 0.6rem;
   }
 
   .node {
@@ -48,19 +51,22 @@
     text-align: left;
     background: none;
     border: none;
-    color: #ccc;
+    border-left: 2px solid transparent;
+    color: var(--muted);
     padding: 0.3rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 0 4px 4px 0;
     cursor: pointer;
     font-size: 0.9rem;
   }
 
   .node:hover {
-    background: #2a2a2a;
+    background: var(--surface);
+    color: var(--text);
   }
 
   .node.selected {
-    background: #2d4a63;
-    color: #fff;
+    background: var(--accent-tint);
+    border-left-color: var(--accent);
+    color: var(--text);
   }
 </style>
