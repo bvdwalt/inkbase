@@ -26,12 +26,21 @@ web-build: web-install
     fi
 
 # Run the frontend dev server (proxies /api and /health to :8080)
-web-dev:
+web-dev: web-install
     @cd web && npm run dev
 
 run: build
     @echo "Running {{BINARY_NAME}}..."
-    @{{BINARY_PATH}}
+    @DB_PATH="${DB_PATH:-./inkbase-dev.db}" {{BINARY_PATH}}
+
+# Run backend (:8080) and frontend dev server (:5173) together — Ctrl-C stops both
+dev: web-install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    trap 'kill 0' EXIT INT TERM
+    DB_PATH="${DB_PATH:-./inkbase-dev.db}" go run {{BUILD_FLAGS}} {{CMD_PATH}} &
+    (cd web && npm run dev) &
+    wait
 
 docker:
     @docker build -t {{BINARY_NAME}} .
@@ -71,6 +80,7 @@ clean:
     @echo "Cleaning build artifacts..."
     @rm -f {{BINARY_PATH}}
     @rm -f coverage.out coverage.html
+    @rm -f inkbase-dev.db inkbase-dev.db-shm inkbase-dev.db-wal
     @go clean
     @echo "Clean complete"
 
