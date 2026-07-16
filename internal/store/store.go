@@ -272,6 +272,9 @@ func (s *Store) Revert(ctx context.Context, pageID, revisionID string) (*Page, e
 }
 
 func (s *Store) Search(ctx context.Context, query string) ([]SearchResult, error) {
+	// Quoted as a literal phrase so it's not parsed as FTS5 query syntax.
+	ftsQuery := `"` + strings.ReplaceAll(query, `"`, `""`) + `"`
+
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT p.id, p.slug, p.title, snippet(pages_fts, 2, '<mark>', '</mark>', '...', 12)
 		FROM pages_fts
@@ -279,7 +282,7 @@ func (s *Store) Search(ctx context.Context, query string) ([]SearchResult, error
 		WHERE pages_fts MATCH ?
 		ORDER BY rank
 		LIMIT 50
-	`, query)
+	`, ftsQuery)
 	if err != nil {
 		return nil, err
 	}

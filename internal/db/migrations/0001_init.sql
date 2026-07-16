@@ -22,14 +22,13 @@ CREATE TABLE revisions (
 
 CREATE INDEX idx_revisions_page_id ON revisions(page_id);
 
--- A standalone (non external-content) FTS5 table: page ids are TEXT (UUIDs),
--- but FTS5's content_rowid must be an integer, so instead of syncing via
--- external-content mode we store page_id as a plain unindexed column and
--- sync it with ordinary INSERT/UPDATE/DELETE, which FTS5 supports directly.
+-- Standalone FTS5 table (page_id stored plain, not via content_rowid, since ids are TEXT UUIDs).
+-- trigram tokenizer gives substring matching instead of FTS5's default whole-token matching.
 CREATE VIRTUAL TABLE pages_fts USING fts5(
     page_id UNINDEXED,
     title,
-    content_text
+    content_text,
+    tokenize='trigram'
 );
 
 CREATE TRIGGER pages_ai AFTER INSERT ON pages BEGIN

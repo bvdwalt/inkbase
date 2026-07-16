@@ -405,6 +405,11 @@
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 1rem;
+    position: sticky;
+    top: 0;
+    background: #121212;
+    padding-bottom: 0.75rem;
+    z-index: 1;
   }
 
   .title-input {
