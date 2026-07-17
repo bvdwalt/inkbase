@@ -1,4 +1,4 @@
-module github.com/bvdwalt/inkbase
+module github.com/bvdwalt/palimpsest
 
 go 1.25.0
 

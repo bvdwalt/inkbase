@@ -14,7 +14,7 @@ type Config struct {
 func Load() *Config {
 	return &Config{
 		Port:                    getEnv("PORT", "8080"),
-		DBPath:                  getEnv("DB_PATH", "/data/inkbase.db"),
+		DBPath:                  getEnv("DB_PATH", "/data/palimpsest.db"),
 		AutosaveIntervalSeconds: getEnvInt("AUTOSAVE_INTERVAL_SECONDS", 10),
 	}
 }

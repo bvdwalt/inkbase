@@ -1,4 +1,4 @@
-BINARY_NAME := "inkbase"
+BINARY_NAME := "palimpsest"
 BINARY_PATH := "./" + BINARY_NAME
 CMD_PATH := "./cmd/" + BINARY_NAME
 VERSION := `git describe --tags --always --dirty 2>/dev/null || echo "dev"`
@@ -31,14 +31,14 @@ web-dev: web-install
 
 run: build
     @echo "Running {{BINARY_NAME}}..."
-    @DB_PATH="${DB_PATH:-./inkbase-dev.db}" {{BINARY_PATH}}
+    @DB_PATH="${DB_PATH:-./palimpsest-dev.db}" {{BINARY_PATH}}
 
 # Run backend (:8080) and frontend dev server (:5173) together — Ctrl-C stops both
 dev: web-install
     #!/usr/bin/env bash
     set -euo pipefail
     trap 'kill 0' EXIT INT TERM
-    DB_PATH="${DB_PATH:-./inkbase-dev.db}" go run {{BUILD_FLAGS}} {{CMD_PATH}} &
+    DB_PATH="${DB_PATH:-./palimpsest-dev.db}" go run {{BUILD_FLAGS}} {{CMD_PATH}} &
     (cd web && npm run dev) &
     wait
 
@@ -97,7 +97,7 @@ clean:
     @echo "Cleaning build artifacts..."
     @rm -f {{BINARY_PATH}}
     @rm -f coverage.out coverage.html
-    @rm -f inkbase-dev.db inkbase-dev.db-shm inkbase-dev.db-wal
+    @rm -f palimpsest-dev.db palimpsest-dev.db-shm palimpsest-dev.db-wal
     @go clean
     @echo "Clean complete"
 

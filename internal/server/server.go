@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bvdwalt/inkbase/internal/store"
-	"github.com/bvdwalt/inkbase/web"
+	"github.com/bvdwalt/palimpsest/internal/store"
+	"github.com/bvdwalt/palimpsest/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )

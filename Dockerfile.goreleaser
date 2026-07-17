@@ -4,7 +4,7 @@ ARG TARGETARCH
 
 RUN apk add --no-cache ca-certificates
 
-COPY ${TARGETOS}/${TARGETARCH}/inkbase /inkbase
+COPY ${TARGETOS}/${TARGETARCH}/palimpsest /palimpsest
 
 EXPOSE 8080
-ENTRYPOINT ["/inkbase"]
+ENTRYPOINT ["/palimpsest"]

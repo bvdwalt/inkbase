@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bvdwalt/inkbase/internal/store"
+	"github.com/bvdwalt/palimpsest/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 

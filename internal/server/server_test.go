@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bvdwalt/inkbase/internal/db"
-	"github.com/bvdwalt/inkbase/internal/server"
-	"github.com/bvdwalt/inkbase/internal/store"
-	"github.com/bvdwalt/inkbase/web"
+	"github.com/bvdwalt/palimpsest/internal/db"
+	"github.com/bvdwalt/palimpsest/internal/server"
+	"github.com/bvdwalt/palimpsest/internal/store"
+	"github.com/bvdwalt/palimpsest/web"
 )
 
 func newTestServer(t *testing.T) http.Handler {

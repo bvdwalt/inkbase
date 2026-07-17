@@ -3,7 +3,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/bvdwalt/inkbase/internal/config"
+	"github.com/bvdwalt/palimpsest/internal/config"
 )
 
 func TestLoadDefaults(t *testing.T) {
@@ -15,8 +15,8 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.Port != "8080" {
 		t.Errorf("Port = %q, want %q", cfg.Port, "8080")
 	}
-	if cfg.DBPath != "/data/inkbase.db" {
-		t.Errorf("DBPath = %q, want %q", cfg.DBPath, "/data/inkbase.db")
+	if cfg.DBPath != "/data/palimpsest.db" {
+		t.Errorf("DBPath = %q, want %q", cfg.DBPath, "/data/palimpsest.db")
 	}
 	if cfg.AutosaveIntervalSeconds != 10 {
 		t.Errorf("AutosaveIntervalSeconds = %d, want 10", cfg.AutosaveIntervalSeconds)

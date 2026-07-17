@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PORT = 8099;
-const dbDir = mkdtempSync(path.join(tmpdir(), "inkbase-e2e-"));
+const dbDir = mkdtempSync(path.join(tmpdir(), "palimpsest-e2e-"));
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 // Drives the real built binary (embedded frontend + chi API + sqlite), not the
@@ -24,11 +24,11 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "./inkbase",
+    command: "./palimpsest",
     cwd: path.resolve(rootDir, ".."),
     env: {
       PORT: String(PORT),
-      DB_PATH: path.join(dbDir, "inkbase-e2e.db"),
+      DB_PATH: path.join(dbDir, "palimpsest-e2e.db"),
     },
     url: `http://localhost:${PORT}/health`,
     reuseExistingServer: false,

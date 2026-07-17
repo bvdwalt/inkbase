@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bvdwalt/inkbase/internal/db"
-	"github.com/bvdwalt/inkbase/internal/store"
+	"github.com/bvdwalt/palimpsest/internal/db"
+	"github.com/bvdwalt/palimpsest/internal/store"
 )
 
 func newTestStore(t *testing.T) *store.Store {

@@ -34,7 +34,7 @@
   let revisions = $state<Revision[]>([]);
   let showRevisions = $state(false);
 
-  let autosaveEnabled = $state(localStorage.getItem("inkbase-autosave") === "true");
+  let autosaveEnabled = $state(localStorage.getItem("palimpsest-autosave") === "true");
   let autosaveIntervalMs = $state(10_000); // default until /api/config loads
 
   async function loadConfig() {
@@ -47,7 +47,7 @@
   }
 
   $effect(() => {
-    localStorage.setItem("inkbase-autosave", String(autosaveEnabled));
+    localStorage.setItem("palimpsest-autosave", String(autosaveEnabled));
     if (!autosaveEnabled) return;
     const ms = autosaveIntervalMs;
     const interval = setInterval(() => {

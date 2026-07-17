@@ -1,14 +1,14 @@
 version: 2
 
-project_name: inkbase
+project_name: palimpsest
 
 before:
   hooks:
     - go mod download
 
 builds:
-  - main: ./cmd/inkbase
-    binary: inkbase
+  - main: ./cmd/palimpsest
+    binary: palimpsest
     env:
       - CGO_ENABLED=0
     goos:
@@ -33,7 +33,7 @@ homebrew_casks:
       owner: bvdwalt
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    homepage: "https://github.com/bvdwalt/inkbase"
+    homepage: "https://github.com/bvdwalt/palimpsest"
     description: "Self-hosted markdown wiki for homelab notes"
     license: "MIT"
 
@@ -41,7 +41,7 @@ homebrew_casks:
 dockers_v2:
   - id: dockerhub
     images:
-      - "{{ .Env.DOCKERHUB_USERNAME }}/inkbase"
+      - "{{ .Env.DOCKERHUB_USERNAME }}/palimpsest"
     tags:
       - "{{ .Version }}"
       - latest
@@ -52,7 +52,7 @@ dockers_v2:
 
   - id: ghcr
     images:
-      - "ghcr.io/bvdwalt/inkbase"
+      - "ghcr.io/bvdwalt/palimpsest"
     tags:
       - "{{ .Version }}"
       - latest
@@ -67,7 +67,7 @@ checksum:
 release:
   github:
     owner: bvdwalt
-    name: inkbase
+    name: palimpsest
 
 changelog:
   sort: asc

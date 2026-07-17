@@ -9,13 +9,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bvdwalt/inkbase/internal/config"
-	"github.com/bvdwalt/inkbase/internal/db"
-	"github.com/bvdwalt/inkbase/internal/server"
-	"github.com/bvdwalt/inkbase/internal/store"
+	"github.com/bvdwalt/palimpsest/internal/config"
+	"github.com/bvdwalt/palimpsest/internal/db"
+	"github.com/bvdwalt/palimpsest/internal/server"
+	"github.com/bvdwalt/palimpsest/internal/store"
 )
 
 func run(ctx context.Context, cfg *config.Config) error {
+	if err := db.MigrateLegacyPath(cfg.DBPath); err != nil {
+		return err
+	}
+
 	sqlDB, err := db.Connect(cfg.DBPath)
 	if err != nil {
 		return err
