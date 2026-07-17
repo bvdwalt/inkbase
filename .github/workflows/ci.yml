@@ -33,6 +33,13 @@ jobs:
         if: hashFiles('web/package.json') != ''
         run: cd web && npm install && npm run build
 
+      - name: Cache Playwright browsers
+        if: hashFiles('web/package.json') != ''
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}
+
       - name: Install dependencies
         run: go mod download
 

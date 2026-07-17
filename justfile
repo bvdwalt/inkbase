@@ -53,7 +53,23 @@ install: build
     @sudo cp {{BINARY_PATH}} /usr/local/bin/{{BINARY_NAME}}
     @echo "Installation complete: /usr/local/bin/{{BINARY_NAME}}"
 
-test:
+# Install Playwright's Chromium browser (no-op if there's no web/ directory)
+web-install-browsers: web-install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -d web ]; then
+        cd web && npx playwright install --with-deps chromium
+    fi
+
+# Run frontend e2e tests against the real built binary (no-op if there's no web/ directory)
+test-e2e: build web-install-browsers
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -d web ]; then
+        cd web && npm run test:e2e
+    fi
+
+test: test-e2e
     @echo "Running tests..."
     @go test ./...
 
@@ -61,7 +77,7 @@ test-verbose:
     @echo "Running tests (verbose)..."
     @go test -v ./...
 
-test-coverage:
+test-coverage: test-e2e
     @echo "Running tests with coverage..."
     @go test -coverpkg=./... -coverprofile=coverage.out ./...
     @go tool cover -func=coverage.out | tail -1

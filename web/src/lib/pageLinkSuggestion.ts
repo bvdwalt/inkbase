@@ -15,6 +15,9 @@ export function pageLinkSuggestion(
   return {
     char: "[[",
     allowedPrefixes: null,
+    // Page titles routinely contain spaces ("Meeting Notes"); without this the
+    // popup closes as soon as the first space is typed.
+    allowSpaces: true,
 
     items: ({ query }) => {
       const q = query.trim().toLowerCase();
