@@ -1,8 +1,17 @@
 import type { Page, PageSummary, Revision, SearchResult } from "../types/Page";
 
+// Set after the SPA bootstraps itself via getConfig(); every subsequent
+// request attaches it so the same-origin UI keeps working without the user
+// ever seeing an API key prompt. External callers (curl, other apps) must
+// supply this header themselves.
+let apiKey: string | null = null;
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (apiKey) headers["X-Api-Key"] = apiKey;
+
   const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
+    headers,
     ...init,
   });
   if (!res.ok) {
@@ -15,10 +24,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export interface AppConfig {
   autosaveIntervalSeconds: number;
+  apiKey: string;
 }
 
-export function getConfig(): Promise<AppConfig> {
-  return request("/api/config");
+export async function getConfig(): Promise<AppConfig> {
+  const cfg = await request<AppConfig>("/api/config");
+  apiKey = cfg.apiKey;
+  return cfg;
+}
+
+export interface Settings {
+  apiKey: string;
+}
+
+export function getSettings(): Promise<Settings> {
+  return request("/api/settings");
+}
+
+export async function regenerateApiKey(): Promise<Settings> {
+  const settings = await request<Settings>("/api/settings/api-key/regenerate", {
+    method: "POST",
+  });
+  apiKey = settings.apiKey;
+  return settings;
 }
 
 export function listPages(): Promise<PageSummary[]> {

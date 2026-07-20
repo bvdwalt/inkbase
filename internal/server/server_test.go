@@ -26,6 +26,28 @@ func newTestServer(t *testing.T) http.Handler {
 	return server.New(store.New(sqlDB), 10)
 }
 
+// apiKeyFor mirrors how the SPA bootstraps itself: fetch the key from the
+// unauthenticated /api/config endpoint before calling anything else.
+func apiKeyFor(t *testing.T, h http.Handler) string {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, "/api/config", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /api/config: status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var cfg struct {
+		APIKey string `json:"apiKey"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &cfg); err != nil {
+		t.Fatalf("unmarshal config: %v", err)
+	}
+	if cfg.APIKey == "" {
+		t.Fatalf("config response has no apiKey: %s", rec.Body.String())
+	}
+	return cfg.APIKey
+}
+
 func doJSON(t *testing.T, h http.Handler, method, path string, body any) *httptest.ResponseRecorder {
 	t.Helper()
 	var reader *bytes.Reader
@@ -40,6 +62,7 @@ func doJSON(t *testing.T, h http.Handler, method, path string, body any) *httpte
 	}
 	req := httptest.NewRequest(method, path, reader)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Api-Key", apiKeyFor(t, h))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	return rec
@@ -248,12 +271,103 @@ func TestGetConfig(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
 	}
-	var cfg map[string]int
+	var cfg struct {
+		AutosaveIntervalSeconds int    `json:"autosaveIntervalSeconds"`
+		APIKey                  string `json:"apiKey"`
+	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &cfg); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if cfg["autosaveIntervalSeconds"] != 10 {
-		t.Errorf("autosaveIntervalSeconds = %d, want 10", cfg["autosaveIntervalSeconds"])
+	if cfg.AutosaveIntervalSeconds != 10 {
+		t.Errorf("autosaveIntervalSeconds = %d, want 10", cfg.AutosaveIntervalSeconds)
+	}
+	if len(cfg.APIKey) != 64 {
+		t.Errorf("apiKey = %q, want 64 hex chars", cfg.APIKey)
+	}
+}
+
+func TestConfigIsReachableWithoutAPIKey(t *testing.T) {
+	h := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/config", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestPagesRequireAPIKey(t *testing.T) {
+	h := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/pages", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestPagesRejectsWrongAPIKey(t *testing.T) {
+	h := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/pages", nil)
+	req.Header.Set("X-Api-Key", "not-the-right-key")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestGetSettings(t *testing.T) {
+	h := newTestServer(t)
+	rec := doJSON(t, h, http.MethodGet, "/api/settings", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var settings struct {
+		APIKey string `json:"apiKey"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &settings); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if len(settings.APIKey) != 64 {
+		t.Errorf("apiKey = %q, want 64 hex chars", settings.APIKey)
+	}
+}
+
+func TestRegenerateAPIKeyInvalidatesOldKey(t *testing.T) {
+	h := newTestServer(t)
+	oldKey := apiKeyFor(t, h)
+
+	rec := doJSON(t, h, http.MethodPost, "/api/settings/api-key/regenerate", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		APIKey string `json:"apiKey"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if resp.APIKey == "" || resp.APIKey == oldKey {
+		t.Fatalf("apiKey = %q, want a new non-empty key (old = %q)", resp.APIKey, oldKey)
+	}
+
+	// Old key is now rejected.
+	req := httptest.NewRequest(http.MethodGet, "/api/pages", nil)
+	req.Header.Set("X-Api-Key", oldKey)
+	oldRec := httptest.NewRecorder()
+	h.ServeHTTP(oldRec, req)
+	if oldRec.Code != http.StatusUnauthorized {
+		t.Errorf("old key: status = %d, want 401", oldRec.Code)
+	}
+
+	// New key works.
+	req = httptest.NewRequest(http.MethodGet, "/api/pages", nil)
+	req.Header.Set("X-Api-Key", resp.APIKey)
+	newRec := httptest.NewRecorder()
+	h.ServeHTTP(newRec, req)
+	if newRec.Code != http.StatusOK {
+		t.Errorf("new key: status = %d, want 200, body = %s", newRec.Code, newRec.Body.String())
 	}
 }
 
@@ -354,6 +468,7 @@ func TestSearchEmptyQueryReturnsEmptyResults(t *testing.T) {
 func TestCreatePageInvalidJSON(t *testing.T) {
 	h := newTestServer(t)
 	req := httptest.NewRequest(http.MethodPost, "/api/pages", bytes.NewReader([]byte("not json")))
+	req.Header.Set("X-Api-Key", apiKeyFor(t, h))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
@@ -366,6 +481,7 @@ func TestUpdatePageInvalidJSON(t *testing.T) {
 	page := createPage(t, h, nil, "Doc")
 
 	req := httptest.NewRequest(http.MethodPut, "/api/pages/"+page.ID, bytes.NewReader([]byte("not json")))
+	req.Header.Set("X-Api-Key", apiKeyFor(t, h))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
@@ -378,6 +494,7 @@ func TestMovePageInvalidJSON(t *testing.T) {
 	page := createPage(t, h, nil, "Doc")
 
 	req := httptest.NewRequest(http.MethodPatch, "/api/pages/"+page.ID+"/parent", bytes.NewReader([]byte("not json")))
+	req.Header.Set("X-Api-Key", apiKeyFor(t, h))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
@@ -438,6 +555,7 @@ func TestHandlersReturn500OnStoreFailure(t *testing.T) {
 	}
 	h := server.New(store.New(sqlDB), 10)
 	page := createPage(t, h, nil, "Doc")
+	apiKey := apiKeyFor(t, h) // fetched before the DB closes, so the middleware's own lookup doesn't 500 first
 	sqlDB.Close()
 
 	cases := []struct {
@@ -455,7 +573,21 @@ func TestHandlersReturn500OnStoreFailure(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			rec := doJSON(t, h, c.method, c.path, c.body)
+			var reader *bytes.Reader
+			if c.body != nil {
+				b, err := json.Marshal(c.body)
+				if err != nil {
+					t.Fatalf("marshal body: %v", err)
+				}
+				reader = bytes.NewReader(b)
+			} else {
+				reader = bytes.NewReader(nil)
+			}
+			req := httptest.NewRequest(c.method, c.path, reader)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-Api-Key", apiKey)
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
 			if rec.Code != http.StatusInternalServerError {
 				t.Errorf("status = %d, want 500, body = %s", rec.Code, rec.Body.String())
 			}

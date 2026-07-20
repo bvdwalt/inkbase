@@ -6,6 +6,7 @@
   import PageTree from "./components/PageTree.svelte";
   import Editor from "./components/Editor.svelte";
   import RevisionDiff from "./components/RevisionDiff.svelte";
+  import Settings from "./components/Settings.svelte";
 
   let pages = $state<PageSummary[]>([]);
   let selectedId = $state<string | null>(null);
@@ -23,6 +24,8 @@
   // Mobile-only: secondary toolbar actions (move, autosave, save, history, delete)
   // collapse behind this toggle so the persistent chrome stays to one slim row.
   let moreOpen = $state(false);
+
+  let showSettings = $state(false);
 
   let editTitle = $state("");
   let editParentId = $state<string | null>(null);
@@ -324,7 +327,17 @@
       {/if}
     </div>
 
-    <button class="new-page" onclick={createPage}>+ New page</button>
+    <div class="sidebar-actions">
+      <button class="new-page" onclick={createPage}>+ New page</button>
+      <button
+        class="settings-toggle"
+        onclick={() => (showSettings = true)}
+        aria-label="Open settings"
+        title="Settings"
+      >
+        ⚙
+      </button>
+    </div>
 
     <nav
       ondragover={(e) => {
@@ -374,7 +387,9 @@
   </aside>
 
   <main>
-    {#if current}
+    {#if showSettings}
+      <Settings onClose={() => (showSettings = false)} />
+    {:else if current}
       <div class="toolbar">
         <input
           class="title-input"
@@ -565,7 +580,13 @@
     color: var(--accent);
   }
 
+  .sidebar-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
   .new-page {
+    flex: 1;
     background: transparent;
     border: 1px solid var(--accent);
     color: var(--accent);
@@ -578,6 +599,26 @@
 
   .new-page:hover {
     background: var(--accent-tint);
+  }
+
+  .settings-toggle {
+    flex-shrink: 0;
+    width: 2.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      color 120ms ease;
+  }
+
+  .settings-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .drop-top-level {

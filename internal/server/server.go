@@ -21,16 +21,26 @@ func New(st *store.Store, autosaveIntervalSeconds int) http.Handler {
 	r.Get("/health", healthHandler)
 
 	r.Route("/api", func(r chi.Router) {
-		r.Get("/config", configHandler(autosaveIntervalSeconds))
-		r.Get("/pages", listPagesHandler(st))
-		r.Post("/pages", createPageHandler(st))
-		r.Get("/pages/{id}", getPageHandler(st))
-		r.Put("/pages/{id}", updatePageHandler(st))
-		r.Patch("/pages/{id}/parent", movePageHandler(st))
-		r.Delete("/pages/{id}", deletePageHandler(st))
-		r.Get("/pages/{id}/revisions", listRevisionsHandler(st))
-		r.Post("/pages/{id}/revert/{revisionID}", revertHandler(st))
-		r.Get("/search", searchHandler(st))
+		// Unauthenticated bootstrap path: the SPA fetches its API key from
+		// here on load before it can attach it to anything else.
+		r.Get("/config", configHandler(st, autosaveIntervalSeconds))
+
+		r.Group(func(r chi.Router) {
+			r.Use(requireAPIKey(st))
+
+			r.Get("/pages", listPagesHandler(st))
+			r.Post("/pages", createPageHandler(st))
+			r.Get("/pages/{id}", getPageHandler(st))
+			r.Put("/pages/{id}", updatePageHandler(st))
+			r.Patch("/pages/{id}/parent", movePageHandler(st))
+			r.Delete("/pages/{id}", deletePageHandler(st))
+			r.Get("/pages/{id}/revisions", listRevisionsHandler(st))
+			r.Post("/pages/{id}/revert/{revisionID}", revertHandler(st))
+			r.Get("/search", searchHandler(st))
+
+			r.Get("/settings", getSettingsHandler(st))
+			r.Post("/settings/api-key/regenerate", regenerateAPIKeyHandler(st))
+		})
 	})
 
 	r.Handle("/*", spaHandler())
