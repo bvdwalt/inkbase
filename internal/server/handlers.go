@@ -13,9 +13,39 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
-func configHandler(autosaveIntervalSeconds int) http.HandlerFunc {
+func configHandler(st *store.Store, autosaveIntervalSeconds int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]int{"autosaveIntervalSeconds": autosaveIntervalSeconds})
+		apiKey, err := st.GetOrCreateAPIKey(r.Context())
+		if err != nil {
+			handleStoreErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"autosaveIntervalSeconds": autosaveIntervalSeconds,
+			"apiKey":                  apiKey,
+		})
+	}
+}
+
+func getSettingsHandler(st *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		apiKey, err := st.GetOrCreateAPIKey(r.Context())
+		if err != nil {
+			handleStoreErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"apiKey": apiKey})
+	}
+}
+
+func regenerateAPIKeyHandler(st *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		apiKey, err := st.RegenerateAPIKey(r.Context())
+		if err != nil {
+			handleStoreErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"apiKey": apiKey})
 	}
 }
 
